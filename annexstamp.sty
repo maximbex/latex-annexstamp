@@ -1,0 +1,133 @@
+% ================================================================
+% annexstamp.sty
+% Version: 0.6 (Silent & Robust Edition)
+% ================================================================
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{annexstamp}[2025/12/16 v0.6 Annex automation]
+
+% ------------------------------
+% Dependencies
+% ------------------------------
+\RequirePackage{ifthen}
+\RequirePackage{xcolor}
+\RequirePackage{etoolbox} % For list building
+\RequirePackage{booktabs} % For the table layout
+
+\IfFileExists{tikz.sty}{\RequirePackage{tikz}}{%
+  \PackageError{annexstamp}{Package 'tikz' not found}{Install PGF/TikZ.}}
+\IfFileExists{pdfpages.sty}{\RequirePackage{pdfpages}}{%
+  \PackageError{annexstamp}{Package 'pdfpages' not found}{Install pdfpages.}}
+
+% ------------------------------
+% Initialization
+% ------------------------------
+% Initialize \defineannex globally to avoid "undefined" errors
+\providecommand{\defineannex}[2]{}
+
+% ------------------------------
+% AUTO-GENERATION: annex-data.tex
+% ------------------------------
+\IfFileExists{annex-data.tex}{}{%
+  \typeout{annexstamp: 'annex-data.tex' not found. Creating a template...}
+  \newwrite\annextemp
+  \immediate\openout\annextemp=annex-data.tex
+  % We use \string to write raw characters (safe for underscores)
+  \immediate\write\annextemp{\string\defineannex{example.pdf}{Example Description}}
+  \immediate\write\annextemp{\string\defineannex{missing_file.pdf}{Test of Missing File Logic}}
+  \immediate\closeout\annextemp
+}
+
+% ------------------------------
+% Counters & Visuals
+% ------------------------------
+\newcounter{annex}
+\newcounter{currentannex}
+
+\newcommand{\stamp}[1]{%
+  \tikz[remember picture,overlay]%
+    \node[draw=black, fill=gray!30, rounded corners=3pt, fill opacity=0.4,
+          text opacity=1, font=\bfseries\large, anchor=north east,
+          xshift=-1cm,yshift=-1cm] at (current page.north east) {#1};}
+
+\newcommand{\annexstamp}{\stamp{B\thecurrentannex}}
+
+% ------------------------------
+% Error Handling Logic (Now handles underscores!)
+% ------------------------------
+\newcommand{\annex@rendererrorpage}[1]{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=north east, xshift=-1cm, yshift=-1cm] 
+        at (current page.north east) {\stamp{B\thecurrentannex}};
+    \node[at=(current page.center), align=left, text width=14cm,
+        draw=red!80!black, line width=2pt, fill=red!5, rounded corners=5pt, inner sep=1cm] {
+        \color{red!80!black}\huge\textbf{\sffamily FILE NOT FOUND}\\[1em]
+        \large\color{black}\textbf{Attempted to load:} \\
+        % \detokenize makes special chars like _ or & safe to print
+        \texttt{\detokenize{#1}} \\[1em]
+        \textit{Check 'annex-data.tex' or ensure the PDF is in the folder.}
+    };
+  \end{tikzpicture}
+  \clearpage
+  \PackageWarning{annexstamp}{Missing file: #1}
+}
+
+% ------------------------------
+% Core Include Command
+% ------------------------------
+\newcommand{\includepdfwithstamp}[2][]{%
+  \stepcounter{annex}\setcounter{currentannex}{\value{annex}}%
+  \IfFileExists{#2}{%
+    \includepdf[#1, pagecommand={\annexstamp}]{#2}%
+  }{%
+    \annex@rendererrorpage{#2}%
+  }%
+}
+
+% ------------------------------
+% THE MASTER COMMAND: \PrintAnnexes
+% ------------------------------
+\newcommand{\PrintAnnexes}{%
+  % --- PASS 1: Table of Annexes ---
+  \section*{Anlagenverzeichnis}
+  
+  % Reset storage
+  \def\annexrows{}
+  
+  % Define collector logic (using \def instead of \renewcommand is safer locally)
+  \def\defineannex##1##2{%
+    \appto\annexrows{%
+      \stepcounter{annex}%
+      B\theannex & ##2 \\ %
+    }%
+  }
+  
+  % Read data
+  \setcounter{annex}{0}
+  \input{annex-data.tex}
+  
+  % Print Table
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    \textbf{Anlage} & \textbf{Beschreibung} \\
+    \midrule
+    \annexrows
+    \bottomrule
+  \end{tabular}
+  
+  \clearpage
+  
+  % --- PASS 2: The Documents ---
+  \section*{Anlagen}
+  \setcounter{annex}{0} % Reset counter
+  
+  % Redefine logic to include PDFs
+  \def\defineannex##1##2{%
+    \includepdfwithstamp[pages=-]{##1}%
+  }
+  
+  % Read data again
+  \input{annex-data.tex}
+}
+
+\endinput
