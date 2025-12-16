@@ -5,7 +5,7 @@
 ## Features
 
 - **Automated Workflow:** Just list your files; the package generates the table and includes the PDFs.
-- **Auto-Configuration:** Automatically creates a data template (`annexstamp-data.tex`) if one is missing.
+- **Auto-Configuration:** Automatically creates a data template (`annex-data.tex`) if one is missing.
 - **"Safe Mode":** If a PDF file is missing or renamed, the compilation **does not crash**. Instead, it generates a visual "File Not Found" page with troubleshooting tips, allowing you to debug without halting.
 - **Zero Config:** Requires only one command in your document: `\PrintAnnexes`.
 
