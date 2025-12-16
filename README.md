@@ -1,6 +1,6 @@
 # annexstamp: Automated Legal Annex Stamping for LaTeX
 
-**annexstamp** is a LaTeX package designed to streamline the creation of legal annexes (Anlagen). It handles the Table of Annexes (Anlagenverzeichnis), the stamping of pages (e.g., "B1", "B2"), and provides robust error handling.
+**annexstamp** is a LaTeX package designed to streamline the creation of legal annexes (Anlagen). It handles the Table of Annexes, the stamping of pages (e.g., "B1", "B2"), and provides robust error handling.
 
 ## Features
 
